@@ -27,39 +27,38 @@ CONTENT=$(base64 < "$RESULTS_FILE" | tr -d '\r\n')
 
 echo "Pushing ${TARGET_PATH} to serialbench/data..."
 
-HTTP_CODE=$(curl -s -o /tmp/data-push-resp.json -w "%{http_code}" -X PUT \
-  -H "Authorization: Bearer ${DATA_TOKEN}" \
-  -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/serialbench/data/contents/${TARGET_PATH}" \
-  -d "{\"message\": \"${PLATFORM} ${RUNTIME}-${RUNTIME_VERSION} ${FMT}\", \"content\": \"${CONTENT}\", \"branch\": \"main\"}")
+# Parallel legs race on the branch head: 409 (branch moved) and 422 (file
+# exists) are both retried with a fresh sha and backoff.
+put_file() {
+  local sha_arg=()
+  [ -n "${1:-}" ] && sha_arg=(-d "{\"message\": \"${PLATFORM} ${RUNTIME}-${RUNTIME_VERSION} ${FMT} (update)\", \"content\": \"${CONTENT}\", \"sha\": \"$1\", \"branch\": \"main\"}")
+  [ -n "${1:-}" ] || sha_arg=(-d "{\"message\": \"${PLATFORM} ${RUNTIME}-${RUNTIME_VERSION} ${FMT}\", \"content\": \"${CONTENT}\", \"branch\": \"main\"}")
+  curl -s -o /tmp/data-push-resp.json -w "%{http_code}" -X PUT \
+    -H "Authorization: Bearer ${DATA_TOKEN}" \
+    -H "Accept: application/vnd.github+json" \
+    "https://api.github.com/repos/serialbench/data/contents/${TARGET_PATH}" \
+    "${sha_arg[@]}"
+}
 
-if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
-  echo "Pushed ${TARGET_PATH}"
-elif [ "$HTTP_CODE" = "422" ]; then
-  UPDATE_CODE=409
-  for TRY in 1 2 3; do
+HTTP_CODE=$(put_file "")
+for TRY in 1 2 3 4 5; do
+  if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then break; fi
+  if [ "$HTTP_CODE" = "409" ] || [ "$HTTP_CODE" = "422" ]; then
     SHA=$(curl -sf \
       -H "Authorization: Bearer ${DATA_TOKEN}" \
       "https://api.github.com/repos/serialbench/data/contents/${TARGET_PATH}" \
       | grep -oE '"sha":\s*"[a-f0-9]+"' | head -1 | grep -oE '[a-f0-9]{40}')
-    if [ -z "$SHA" ]; then
-      echo "::warning::422 but couldn't get sha for ${TARGET_PATH}"
-      break
-    fi
-    UPDATE_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X PUT \
-      -H "Authorization: Bearer ${DATA_TOKEN}" \
-      -H "Accept: application/vnd.github+json" \
-      "https://api.github.com/repos/serialbench/data/contents/${TARGET_PATH}" \
-      -d "{\"message\": \"${PLATFORM} ${RUNTIME}-${RUNTIME_VERSION} ${FMT} (update)\", \"content\": \"${CONTENT}\", \"sha\": \"${SHA}\", \"branch\": \"main\"}")
-    [ "$UPDATE_CODE" = "200" ] && break
-    echo "update attempt $TRY got $UPDATE_CODE — refetching sha"
-    sleep 2
-  done
-  if [ "$UPDATE_CODE" = "200" ]; then
-    echo "Updated existing ${TARGET_PATH}"
-  elif [ -n "$SHA" ]; then
-    echo "::warning::could not update ${TARGET_PATH} ($UPDATE_CODE)"
+    [ -z "$SHA" ] && break
+    echo "attempt $TRY got $HTTP_CODE — refetching sha and retrying"
+    sleep $((TRY * 3))
+    HTTP_CODE=$(put_file "$SHA")
+  else
+    break
   fi
+done
+
+if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ]; then
+  echo "Pushed ${TARGET_PATH}"
 else
   echo "::warning::Push failed (${HTTP_CODE}): $(cat /tmp/data-push-resp.json | head -c 200)"
 fi
