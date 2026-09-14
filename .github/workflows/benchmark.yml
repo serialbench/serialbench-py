@@ -1,0 +1,200 @@
+name: benchmark-weekly
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'README.md'
+      - '**.md'
+  schedule:
+    - cron: '30 2 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "py-site-deploy"
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      python-versions: ${{ steps.set-matrix.outputs.python-versions }}
+      platforms: ${{ steps.set-matrix.outputs.platforms }}
+      run-date: ${{ steps.set-matrix.outputs.run-date }}
+    steps:
+      - name: Set matrix configurations
+        id: set-matrix
+        run: |
+          echo 'python-versions=["3.10", "3.11", "3.12", "3.13"]' >> $GITHUB_OUTPUT
+          echo 'platforms=["ubuntu-24.04", "ubuntu-24.04-arm", "ubuntu-22.04", "macos-14", "macos-15", "macos-15-intel", "macos-26", "macos-26-intel", "windows-2022", "windows-2025"]' >> $GITHUB_OUTPUT
+          echo "run-date=$(date -u +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+  benchmark:
+    runs-on: ${{ matrix.platform }}
+    needs: setup
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJson(needs.setup.outputs.platforms) }}
+        python-version: ${{ fromJson(needs.setup.outputs.python-versions) }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install harness and adapters
+        run: |
+          pip install -e '.[adapters,tris]'
+
+      - name: Load canonical fixtures
+        run: |
+          git clone --depth 1 https://github.com/serialbench/fixtures.git fixtures
+          (cd fixtures && sha256sum -c SHA256SUMS) || (cd fixtures && shasum -a 256 -c SHA256SUMS)
+        shell: bash
+
+      - name: Benchmark json
+        continue-on-error: true
+        shell: bash
+        env:
+          SERIALBENCH_FIXTURES: fixtures
+          GITHUB_RUNNER_PLATFORM: ${{ matrix.platform }}
+        run: |
+          if [ "${{ github.run_attempt }}" -gt 1 ] && .github/scripts/format-status.sh json ${{ matrix.python-version }} ${{ matrix.platform }}; then
+            echo "json already in the data repo — skipping (gap-filling rerun)"
+            exit 0
+          fi
+          python -m serialbench.cli run --format json --platform-name "${{ matrix.platform }}" --out results/json/results.yaml
+
+      - name: Upload json
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ matrix.platform }}-python-${{ matrix.python-version }}-json
+          path: results/json
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Push json to data repo
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        env:
+          DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+          DATA_RUN_DATE: ${{ needs.setup.outputs.run-date }}
+        run: .github/scripts/push-to-data.sh json ${{ matrix.python-version }} ${{ matrix.platform }}
+        shell: bash
+
+      - name: Benchmark yaml
+        continue-on-error: true
+        shell: bash
+        env:
+          SERIALBENCH_FIXTURES: fixtures
+        run: |
+          if [ "${{ github.run_attempt }}" -gt 1 ] && .github/scripts/format-status.sh yaml ${{ matrix.python-version }} ${{ matrix.platform }}; then
+            exit 0
+          fi
+          python -m serialbench.cli run --format yaml --platform-name "${{ matrix.platform }}" --out results/yaml/results.yaml
+
+      - name: Upload yaml
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ matrix.platform }}-python-${{ matrix.python-version }}-yaml
+          path: results/yaml
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Push yaml to data repo
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        env:
+          DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+          DATA_RUN_DATE: ${{ needs.setup.outputs.run-date }}
+        run: .github/scripts/push-to-data.sh yaml ${{ matrix.python-version }} ${{ matrix.platform }}
+        shell: bash
+
+      - name: Benchmark toml
+        continue-on-error: true
+        shell: bash
+        env:
+          SERIALBENCH_FIXTURES: fixtures
+        run: |
+          if [ "${{ github.run_attempt }}" -gt 1 ] && .github/scripts/format-status.sh toml ${{ matrix.python-version }} ${{ matrix.platform }}; then
+            exit 0
+          fi
+          python -m serialbench.cli run --format toml --platform-name "${{ matrix.platform }}" --out results/toml/results.yaml
+
+      - name: Upload toml
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ matrix.platform }}-python-${{ matrix.python-version }}-toml
+          path: results/toml
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Push toml to data repo
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        env:
+          DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+          DATA_RUN_DATE: ${{ needs.setup.outputs.run-date }}
+        run: .github/scripts/push-to-data.sh toml ${{ matrix.python-version }} ${{ matrix.platform }}
+        shell: bash
+
+      - name: Benchmark xml
+        continue-on-error: true
+        shell: bash
+        env:
+          SERIALBENCH_FIXTURES: fixtures
+        run: |
+          if [ "${{ github.run_attempt }}" -gt 1 ] && .github/scripts/format-status.sh xml ${{ matrix.python-version }} ${{ matrix.platform }}; then
+            exit 0
+          fi
+          python -m serialbench.cli run --format xml --platform-name "${{ matrix.platform }}" --out results/xml/results.yaml
+
+      - name: Upload xml
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ matrix.platform }}-python-${{ matrix.python-version }}-xml
+          path: results/xml
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Push xml to data repo
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        env:
+          DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+          DATA_RUN_DATE: ${{ needs.setup.outputs.run-date }}
+        run: .github/scripts/push-to-data.sh xml ${{ matrix.python-version }} ${{ matrix.platform }}
+        shell: bash
+
+      - name: Verify leg completeness
+        if: ${{ !cancelled() }}
+        shell: bash
+        env:
+          DATA_REPO_TOKEN: ${{ secrets.DATA_REPO_TOKEN }}
+          DATA_RUN_DATE: ${{ needs.setup.outputs.run-date }}
+        run: |
+          MISSING=""
+          for FMT in json yaml toml xml; do
+            if .github/scripts/format-status.sh "$FMT" "${{ matrix.python-version }}" "${{ matrix.platform }}"; then
+              echo "$FMT: in data repo"
+            else
+              echo "$FMT: MISSING from data repo"
+              MISSING="$MISSING $FMT"
+            fi
+          done
+          if [ -n "$MISSING" ]; then
+            echo "::error::formats never pushed:${MISSING} — failing the leg so autoheal fills the gap"
+            exit 1
+          fi

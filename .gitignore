@@ -1,0 +1,5 @@
+test_data/
+fixtures/
+__pycache__/
+*.egg-info/
+results/

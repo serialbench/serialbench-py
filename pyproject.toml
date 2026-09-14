@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "serialbench"
+version = "0.1.0"
+description = "Cross-language serialization benchmarks - Python harness (canonical fixtures from serialbench/fixtures)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = ["PyYAML>=6.0"]
+
+[project.optional-dependencies]
+adapters = ["lxml>=5.0", "orjson>=3.9", "python-rapidjson>=1.14", "tomlkit>=0.12"]
+tris = ["leptris", "yeptris", "teptris"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+serialbench = "serialbench.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
