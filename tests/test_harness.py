@@ -36,6 +36,32 @@ def test_round_trips():
             assert adapter.parse(adapter.generate(adapter.parse(SMALL[fmt]))) is not None, fmt
 
 
+def test_all_registered_adapters_parse():
+    from serialbench.adapters import json, toml, xml, yaml
+
+    registries = {"xml": xml, "json": json, "yaml": yaml, "toml": toml}
+    docs = {"xml": "<a><b/></a>", "json": '{"a": [1]}', "yaml": "a: 1\nb:\n- x\n", "toml": "a = 1\n"}
+    measured = 0
+    for fmt, mod in registries.items():
+        for cls in mod.REGISTER:
+            adapter = cls()
+            if not adapter.available:
+                continue
+            parsed = adapter.parse(docs[fmt])
+            assert parsed is not None, fmt
+            measured += 1
+    assert measured >= 6, f"expected the core field to be measurable, got {measured}"
+
+
+def test_xquery_xslt_ops_on_capable_adapters():
+    from serialbench.runner import OPERATIONS
+
+    data = {"small": {"xml": "<books><book id=\"1\"><price>42</price></book></books>"}}
+    rows = run_format("xml", data, sizes=("small",))
+    ops = {r["adapter"] for r in rows.get("xquery", [])}
+    assert "leptris" in ops
+
+
 def test_runner_produces_rows(tmp_path):
     data = {"small": {f: SMALL[f] for f in ("json",)}, "medium": {}, "large": {}}
     result = run_format("json", data, sizes=("small",))
