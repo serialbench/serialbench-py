@@ -11,7 +11,13 @@ def _leptris():
 
 class LeptrisAdapter(XmlAdapter):
     name = "leptris"
-    capabilities = frozenset({"dom", "parse", "generate", "xpath", "streaming", "xquery", "xslt", "xslt30"})
+    # windows: the native ops (xquery/xslt/xslt30/streaming) segfault inside
+    # the mingw wheel (upstream issue) - parse/generate/html stay enabled
+    import sys as _sys
+
+    _NATIVE_OPS = frozenset({"streaming", "xquery", "xslt", "xslt30"})
+    capabilities = frozenset({"dom", "parse", "generate", "xpath"}) | (
+        _NATIVE_OPS if _sys.platform != "win32" else frozenset())
 
     def _probe(self):
         _leptris().fromstring("<probe/>")
