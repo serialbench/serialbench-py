@@ -18,6 +18,10 @@ def fixtures_dir() -> pathlib.Path:
     )
 
 
+def artifact(name: str) -> str:
+    return (fixtures_dir() / name).read_text()
+
+
 def load(formats, sizes):
     base = fixtures_dir()
     return {

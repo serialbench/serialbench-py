@@ -4,7 +4,7 @@ from ..base import _module_version
 
 class LxmlAdapter(XmlAdapter):
     name = "lxml"
-    capabilities = frozenset({"dom", "parse", "generate", "xpath", "streaming"})
+    capabilities = frozenset({"dom", "parse", "generate", "xpath", "streaming", "xslt"})
 
     def version(self):
         return _module_version("lxml")
@@ -22,6 +22,12 @@ class LxmlAdapter(XmlAdapter):
 
     def xpath_query(self, document, expression) -> int:
         return len(document.xpath(expression))
+
+    def xslt_transform(self, document, stylesheet) -> str:
+        from lxml import etree
+
+        transform = etree.XSLT(etree.fromstring(stylesheet.encode()))
+        return str(transform(document))
 
     def stream_parse(self, data, sink):
         from lxml import etree

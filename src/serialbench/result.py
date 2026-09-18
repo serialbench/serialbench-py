@@ -34,10 +34,12 @@ def write(path, fmt, platform_info, benchmark_result, benchmark_name):
         "benchmark_config": {
             "name": benchmark_name,
             "formats": [fmt],
-            "operations": ["parsing", "generation", "xpath", "streaming", "memory"],
+            "operations": ["parsing", "generation", "xpath", "xquery", "xslt", "xslt30", "validation", "streaming", "memory"],
         },
-        "serializers": _serializers_information(fmt, registry.REGISTER),
-        "benchmark_result": benchmark_result,
+        "benchmark_result": {
+            "serializers": _serializers_information(fmt, registry.REGISTER),
+            **benchmark_result,
+        },
     }
     with open(path, "w") as fh:
         yaml.safe_dump(document, fh, sort_keys=False, default_flow_style=False, allow_unicode=True)

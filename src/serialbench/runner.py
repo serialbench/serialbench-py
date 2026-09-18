@@ -8,6 +8,12 @@ REGISTRY = {"xml": xml.REGISTER, "json": json.REGISTER, "yaml": yaml.REGISTER, "
 ITERATIONS = {"small": 10, "medium": 3, "large": 1}
 WARMUP = 3
 
+def _artifact(name):
+    from .test_data import artifact
+
+    return artifact(name)
+
+
 def _run_xpath(adapter, data):
     doc = adapter.parse(data)
     adapter.xpath_query(doc, "//book")
@@ -19,6 +25,12 @@ OPERATIONS = {
     "parsing": lambda a, data: a.parse(data),
     "generation": lambda a, data: a.generate(a.parse(data)),
     "xpath": _run_xpath,
+    "xquery": lambda a, data: (
+        a.xquery_eval(a.parse(data), "count(//user | //record)"),
+        a.xquery_eval(a.parse(data), "//record[@id='101']/data/field1"),
+    ),
+    "xslt": lambda a, data: a.xslt_transform(a.parse(data), _artifact("transform.xsl")),
+    "xslt30": lambda a, data: a.xslt_transform(a.parse(data), _artifact("transform30.xsl")),
     "streaming": lambda a, data: a.stream_parse(data, lambda event, payload: None),
 }
 
@@ -32,13 +44,17 @@ def _selected_adapters(operation, fmt):
             continue
         if operation == "xpath" and not adapter.supports("xpath"):
             continue
+        if operation == "xquery" and not adapter.supports("xquery"):
+            continue
+        if operation in ("xslt", "xslt30") and not adapter.supports("xslt30"):
+            continue
         if operation == "streaming" and not (adapter.supports("streaming") or adapter.supports("sax")):
             continue
         yield adapter
 
 
 def run_format(fmt, test_data, sizes=("small", "medium", "large")) -> dict:
-    result = {"parsing": [], "generation": [], "xpath": [], "streaming": [], "memory": []}
+    result = {"parsing": [], "generation": [], "xpath": [], "xquery": [], "xslt": [], "xslt30": [], "validation": [], "streaming": [], "memory": []}
     for operation, handler in list(OPERATIONS.items()) + [("memory", None)]:
         for size in sizes:
             data = test_data[size][fmt]
