@@ -37,6 +37,14 @@ class YamlAdapter(Adapter):
         return _features(self, YAML_FEATURE_KEYS)
 
 
+class HtmlAdapter(Adapter):
+    format = "html"
+    capabilities = frozenset({"dom", "parse", "generate"})
+
+    def features(self):
+        return {"xpath": self.supports("xpath"), "html5": self.supports("html5")}
+
+
 class CborAdapter(Adapter):
     format = "cbor"
     capabilities = frozenset({"dom", "parse", "generate"})
