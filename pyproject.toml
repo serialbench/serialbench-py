@@ -12,7 +12,7 @@ license = "MIT"
 dependencies = ["PyYAML>=6.0"]
 
 [project.optional-dependencies]
-adapters = ["lxml>=5.0", "orjson>=3.9", "python-rapidjson>=1.14", "tomlkit>=0.12"]
+adapters = ["lxml>=5.0", "orjson>=3.9", "python-rapidjson>=1.14", "tomlkit>=0.12", "cbor2>=5.4"]
 tris = ["leptris", "yeptris", "teptris"]
 dev = ["pytest>=8.0"]
 

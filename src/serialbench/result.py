@@ -2,7 +2,7 @@ import datetime as _dt
 
 import yaml
 
-from .adapters import xml, json, yaml as yaml_adapters, toml
+from .adapters import cbor, xml, json, yaml as yaml_adapters, toml
 
 
 def _serializers_information(fmt, registry):
@@ -23,7 +23,7 @@ def _serializers_information(fmt, registry):
 
 
 def write(path, fmt, platform_info, benchmark_result, benchmark_name):
-    registry = {"xml": xml, "json": json, "yaml": yaml_adapters, "toml": toml}[fmt]
+    registry = {"xml": xml, "json": json, "yaml": yaml_adapters, "toml": toml, "cbor": cbor}[fmt]
     document = {
         "platform": platform_info,
         "metadata": {

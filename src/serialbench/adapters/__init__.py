@@ -37,6 +37,14 @@ class YamlAdapter(Adapter):
         return _features(self, YAML_FEATURE_KEYS)
 
 
+class CborAdapter(Adapter):
+    format = "cbor"
+    capabilities = frozenset({"dom", "parse", "generate"})
+
+    def features(self):
+        return {"streaming": self.supports("streaming"), "canonical": self.supports("canonical")}
+
+
 class TomlAdapter(Adapter):
     format = "toml"
     capabilities = frozenset({"dom", "parse", "generate", "arrays_of_tables", "inline_tables", "multiline_strings"})

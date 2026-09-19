@@ -1,9 +1,9 @@
 import time
 
-from .adapters import xml, json, yaml, toml
+from .adapters import cbor, xml, json, yaml, toml
 from .memory import profile_parse
 
-REGISTRY = {"xml": xml.REGISTER, "json": json.REGISTER, "yaml": yaml.REGISTER, "toml": toml.REGISTER}
+REGISTRY = {"xml": xml.REGISTER, "json": json.REGISTER, "yaml": yaml.REGISTER, "toml": toml.REGISTER, "cbor": cbor.REGISTER}
 
 ITERATIONS = {"small": 10, "medium": 3, "large": 1}
 WARMUP = 3

@@ -25,6 +25,6 @@ def artifact(name: str) -> str:
 def load(formats, sizes):
     base = fixtures_dir()
     return {
-        size: {fmt: (base / f"{size}.{fmt}").read_text() for fmt in formats}
+        size: {fmt: (base / f"{size}.{fmt}").read_bytes() if fmt == "cbor" else (base / f"{size}.{fmt}").read_text() for fmt in formats}
         for size in sizes
     }

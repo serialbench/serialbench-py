@@ -12,7 +12,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(prog="serialbench", description="Python serialization benchmarks on canonical fixtures")
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run", help="benchmark one format")
-    run.add_argument("--format", required=True, choices=["xml", "json", "yaml", "toml"])
+    run.add_argument("--format", required=True, choices=["xml", "json", "yaml", "toml", "cbor"])
     run.add_argument("--platform-name", required=True, help="runner platform label, e.g. macos-26")
     run.add_argument("--out", required=True, help="output results.yaml path")
     args = parser.parse_args(argv)
