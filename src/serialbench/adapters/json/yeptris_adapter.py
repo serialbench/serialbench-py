@@ -1,14 +1,21 @@
-# yeptris-py 0.2.x exposes YAML only - no JSON API yet. This adapter is a
-# placeholder that stays unavailable (and says why) until upstream ships one.
+# yeptris-py 0.6.x ships a JSON face (yeptris.json.loads). Parse-only:
+# no dump yet — when upstream ships one it should price like the Ruby
+# yeptris-json adapter (parse + generate).
 from .. import JsonAdapter
+from ..base import _module_version
 
 
 class YeptrisJsonAdapter(JsonAdapter):
     name = "yeptris-json"
-    capabilities = frozenset()
+    capabilities = frozenset({"dom", "parse"})
 
     def _probe(self):
-        raise ImportError("yeptris-py has no JSON API yet (YAML only)")
+        self.parse('{"probe":true}')
 
     def version(self):
-        return "unknown"
+        return _module_version("yeptris")
+
+    def parse(self, data):
+        import yeptris.json
+
+        return yeptris.json.loads(data)
