@@ -1,13 +1,13 @@
 # yeptris-py grew a CBOR face (yeptris.cbor) in 0.6.x: load/dump over the
-# same FFI document. Parse-only — dump mis-encodes strings shaped like
-# exponent notation ("1e0" -> 1.0), the same codec defect as the Ruby binding.
+# same FFI document. Full parse + generate as of 0.6.35.1, which fixes dump
+# fidelity (yeptris-ruby#293 — exponent-notation strings encoded as floats).
 from .. import CborAdapter
 from ..base import _module_version
 
 
 class YeptrisCborAdapter(CborAdapter):
     name = "yeptris-cbor"
-    capabilities = frozenset({"dom", "parse"})
+    capabilities = frozenset({"dom", "parse", "generate"})
 
     def _probe(self):
         self.parse(b"\xf5")
@@ -19,3 +19,8 @@ class YeptrisCborAdapter(CborAdapter):
         import yeptris.cbor
 
         return yeptris.cbor.load(data)
+
+    def generate(self, data) -> bytes:
+        import yeptris.cbor
+
+        return yeptris.cbor.dump(data)
