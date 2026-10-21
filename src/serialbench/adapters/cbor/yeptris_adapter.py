@@ -1,14 +1,21 @@
-# yeptris-py 0.6.7.x exposes YAML only - no CBOR API yet. This adapter is a
-# placeholder that stays unavailable (and says why) until upstream ships one.
+# yeptris-py grew a CBOR face (yeptris.cbor) in 0.6.x: load/dump over the
+# same FFI document. Parse-only — dump mis-encodes strings shaped like
+# exponent notation ("1e0" -> 1.0), the same codec defect as the Ruby binding.
 from .. import CborAdapter
+from ..base import _module_version
 
 
 class YeptrisCborAdapter(CborAdapter):
     name = "yeptris-cbor"
-    capabilities = frozenset()
+    capabilities = frozenset({"dom", "parse"})
 
     def _probe(self):
-        raise ImportError("yeptris-py has no CBOR API yet (YAML only)")
+        self.parse(b"\xf5")
 
     def version(self):
-        return "unknown"
+        return _module_version("yeptris")
+
+    def parse(self, data):
+        import yeptris.cbor
+
+        return yeptris.cbor.load(data)

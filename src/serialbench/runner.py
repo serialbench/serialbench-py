@@ -15,10 +15,12 @@ def _artifact(name):
 
 
 def _run_xpath(adapter, data):
+    # Same queries as the Ruby harness's XPATH_QUERIES — cross-language
+    # numbers are only comparable when the workloads match the fixtures.
     doc = adapter.parse(data)
-    adapter.xpath_query(doc, "//book")
-    adapter.xpath_query(doc, "//book[@id='101']")
-    adapter.xpath_query(doc, "//book[price > 30]/title")
+    adapter.xpath_query(doc, "//user | //record")
+    adapter.xpath_query(doc, "//user[@id='101']")
+    adapter.xpath_query(doc, "//preferences/theme")
 
 
 OPERATIONS = {
