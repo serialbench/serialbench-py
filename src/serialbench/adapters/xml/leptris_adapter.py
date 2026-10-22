@@ -11,13 +11,14 @@ def _leptris():
 
 class LeptrisAdapter(XmlAdapter):
     name = "leptris"
-    # windows: the native ops (xquery/xslt/xslt30/streaming) segfault inside
-    # the mingw wheel (upstream issue) - parse/generate/html stay enabled
-    import sys as _sys
-
-    _NATIVE_OPS = frozenset({"streaming", "xquery", "xslt", "xslt30"})
-    capabilities = frozenset({"dom", "parse", "generate", "xpath"}) | (
-        _NATIVE_OPS if _sys.platform != "win32" else frozenset())
+    # The Sep 2026 windows gate (native ops off on win32) is gone: the
+    # gate-era wheel shipped no engine DLL at all — the crash was an
+    # environment artifact, and leptris-py#306 found no repro on any
+    # Windows path (wheels are MSVC-built; the engine is vendored since
+    # 1.9.278). Windows is covered by the test matrix again.
+    capabilities = frozenset(
+        {"dom", "parse", "generate", "xpath", "streaming", "xquery", "xslt", "xslt30"}
+    )
 
     def _probe(self):
         _leptris().fromstring("<probe/>")

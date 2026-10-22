@@ -10,11 +10,16 @@ permissions:
 
 jobs:
   pytest:
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.10", "3.12", "3.13"]
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.10", "3.13"]
+        exclude:
+          # keep the matrix lean: windows covers the native-ops surface
+          - os: windows-latest
+            python: "3.10"
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
