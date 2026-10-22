@@ -1,14 +1,13 @@
-# yeptris-py 0.6.35.2 ships the JSON dump (dumps) — but it mis-encodes
-# strings shaped like exponent notation ("1e0" -> 1.0) while the Ruby
-# binding is exact, so :generate stays out of the capability set until
-# dumps round-trips the canonical fixtures (yeptris-py#141).
+# yeptris-py JSON face: loads + dumps. Dump round-trips the canonical
+# fixtures exactly as of 0.6.36.1 (yeptris-py#141 — before that, strings
+# shaped like exponent notation encoded as numbers).
 from .. import JsonAdapter
 from ..base import _module_version
 
 
 class YeptrisJsonAdapter(JsonAdapter):
     name = "yeptris-json"
-    capabilities = frozenset({"dom", "parse"})
+    capabilities = frozenset({"dom", "parse", "generate"})
 
     def _probe(self):
         self.parse('{"probe":true}')
@@ -20,3 +19,8 @@ class YeptrisJsonAdapter(JsonAdapter):
         import yeptris.json
 
         return yeptris.json.loads(data)
+
+    def generate(self, data) -> str:
+        import yeptris.json
+
+        return yeptris.json.dumps(data)
