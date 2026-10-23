@@ -33,6 +33,8 @@ def test_round_trips():
             adapter = cls()
             if not adapter.available or not adapter.supports("generate"):
                 continue
+            if not adapter.supports("parse"):
+                continue
             assert adapter.parse(adapter.generate(adapter.parse(SMALL[fmt]))) is not None, fmt
 
 
@@ -45,7 +47,7 @@ def test_all_registered_adapters_parse():
     for fmt, mod in registries.items():
         for cls in mod.REGISTER:
             adapter = cls()
-            if not adapter.available:
+            if not adapter.available or not adapter.supports("parse"):
                 continue
             parsed = adapter.parse(docs[fmt])
             assert parsed is not None, fmt
