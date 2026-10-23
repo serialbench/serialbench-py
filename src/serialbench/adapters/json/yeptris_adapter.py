@@ -1,6 +1,6 @@
-# yeptris-py JSON face: loads + dumps. Dump round-trips the canonical
-# fixtures exactly as of 0.6.36.1 (yeptris-py#141 — before that, strings
-# shaped like exponent notation encoded as numbers).
+# yeptris-py JSON face: loads + dumps. Dump fidelity shipped in
+# 0.6.36.1 (yeptris-py#141 — before that, strings shaped like exponent
+# notation encoded as numbers).
 from .. import JsonAdapter
 from ..base import _module_version
 
