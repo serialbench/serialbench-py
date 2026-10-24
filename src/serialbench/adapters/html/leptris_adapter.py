@@ -6,7 +6,10 @@ class LeptrisHtmlAdapter(HtmlAdapter):
     """html4 mode: the libxml2/lxml-parity engine (upstream default)."""
 
     name = "leptris"
-    capabilities = frozenset({"dom", "parse", "xpath"})
+    # generate() landed in leptris-py 1.9.381.1 (upstream #311); on older
+    # wheels the html leg's generation rows fail and autoheal refills the
+    # format after the next wheel lands.
+    capabilities = frozenset({"dom", "parse", "xpath", "generate"})
 
     def _probe(self):
         import leptris.html
@@ -20,6 +23,11 @@ class LeptrisHtmlAdapter(HtmlAdapter):
         import leptris.html
 
         return leptris.html.fromstring(data)
+
+    def generate(self, document) -> str:
+        import leptris.html
+
+        return leptris.html.generate(document)
 
     def xpath_query(self, document, expression):
         result = document.xpath(expression)

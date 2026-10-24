@@ -5,7 +5,7 @@ class LeptrisWhatwgAdapter(LeptrisHtmlAdapter):
     """The WHATWG-conformant engine, priced separately."""
 
     name = "leptris-whatwg"
-    capabilities = frozenset({"dom", "parse", "xpath", "html5"})
+    capabilities = frozenset({"dom", "parse", "xpath", "html5", "generate"})
 
     def parse(self, data):
         import leptris.html
