@@ -34,7 +34,7 @@ def write(path, fmt, platform_info, benchmark_result, benchmark_name):
         "benchmark_config": {
             "name": benchmark_name,
             "formats": [fmt],
-            "operations": ["parsing", "generation", "xpath", "xquery", "xslt", "xslt30", "validation", "streaming", "memory"],
+            "operations": ["parsing", "generation", "xpath", "xquery", "xslt", "xslt30", "validation", "c14n", "diff", "plan", "streaming", "memory"],
         },
         "benchmark_result": {
             "serializers": _serializers_information(fmt, registry.REGISTER),
