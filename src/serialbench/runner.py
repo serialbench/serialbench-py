@@ -47,6 +47,8 @@ def _selected_adapters(operation, fmt):
         adapter = cls()
         if not adapter.available:
             continue
+        if operation == "parsing" and not adapter.supports("parse"):
+            continue
         if operation == "generation" and not adapter.supports("generate"):
             continue
         if operation == "xpath" and not adapter.supports("xpath"):
