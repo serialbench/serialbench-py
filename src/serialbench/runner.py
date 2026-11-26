@@ -34,6 +34,11 @@ OPERATIONS = {
     "xslt": lambda a, data: a.xslt_transform(a.parse(data), _artifact("transform.xsl")),
     "xslt30": lambda a, data: a.xslt_transform(a.parse(data), _artifact("transform30.xsl")),
     "streaming": lambda a, data: a.stream_parse(data, lambda event, payload: None),
+    # schema/query faces: the adapter resolves its per-shape schema or
+    # plan from the document root and compiles it once per stem; the
+    # teptris/yeptris faces parse internally, so raw data is passed.
+    "validation": lambda a, data: a.validate(data, None),
+    "plan": lambda a, data: a.plan_walk(data),
 }
 
 
@@ -52,11 +57,13 @@ def _selected_adapters(operation, fmt):
             continue
         if operation == "streaming" and not (adapter.supports("streaming") or adapter.supports("sax")):
             continue
+        if operation in ("validation", "plan") and not adapter.supports(operation):
+            continue
         yield adapter
 
 
 def run_format(fmt, test_data, sizes=("small", "medium", "large")) -> dict:
-    result = {"parsing": [], "generation": [], "xpath": [], "xquery": [], "xslt": [], "xslt30": [], "validation": [], "streaming": [], "memory": []}
+    result = {"parsing": [], "generation": [], "xpath": [], "xquery": [], "xslt": [], "xslt30": [], "validation": [], "c14n": [], "diff": [], "plan": [], "streaming": [], "memory": []}
     for operation, handler in list(OPERATIONS.items()) + [("memory", None)]:
         for size in sizes:
             data = test_data[size][fmt]
