@@ -133,4 +133,17 @@ def test_validation_faces_on_canonical_shapes():
         assert schema.validate(medium_json) is True
 
 
+def test_yeptris_yaml_plan_rows():
+    from serialbench.adapters.yaml.yeptris_adapter import YeptrisYamlAdapter
 
+    adapter = YeptrisYamlAdapter()
+    if not adapter.available:
+        return
+    base = _fixtures_or_skip()
+
+    users = adapter.plan_walk((base / "medium.yaml").read_text())
+    assert len(users) == 1000
+    assert users[0][":id"] == 1
+
+    records = adapter.plan_walk((base / "large.yaml").read_text())
+    assert len(records) == 10_000
