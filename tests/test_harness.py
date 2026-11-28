@@ -1,6 +1,8 @@
 import pathlib
 import tempfile
 
+import pytest
+
 from serialbench.adapters import xml, json, yaml, toml
 from serialbench.runner import run_format
 from serialbench.test_data import load
@@ -70,3 +72,65 @@ def test_runner_produces_rows(tmp_path):
     assert result["parsing"], "parsing rows missing"
     assert all(r["iterations_per_second"] > 0 for r in result["parsing"])
     assert result["memory"], "memory rows missing"
+
+
+def _fixtures_or_skip():
+    from serialbench.test_data import fixtures_dir
+
+    try:
+        return fixtures_dir()
+    except FileNotFoundError:
+        pytest.skip("canonical fixtures not present")
+
+
+def test_leptris_xml_query_faces():
+    from serialbench.adapters.xml.leptris_adapter import LeptrisAdapter
+
+    adapter = LeptrisAdapter()
+    if not adapter.available:
+        return  # leptris not installed; availability is covered elsewhere
+    base = _fixtures_or_skip()
+    medium = (base / "medium.xml").read_text()
+    large = (base / "large.xml").read_text()
+
+    out = adapter.c14n(medium)
+    assert isinstance(out, bytes) and out
+
+    assert adapter.diff_walk(medium) == 0
+
+    users = adapter.plan_walk(medium)
+    rows = users.get("children", {}).get("user", [])
+    assert len(rows) == 1000, f"expected 1000 user rows, got {len(rows)}"
+    assert rows[0]["attributes"]["id"] == "1"
+
+    records = adapter.plan_walk(large)
+    rset = records.get("children", {}).get("records")
+    rset = rset[0] if isinstance(rset, list) else rset
+    assert rset and len(rset.get("children", {}).get("record", [])) == 10_000
+
+
+def test_validation_faces_on_canonical_shapes():
+    from serialbench.adapters.xml.leptris_xsd_adapter import LeptrisXsdAdapter
+    from serialbench.adapters.xml.leptris_schematron_adapter import (
+        LeptrisSchematronAdapter,
+    )
+    from serialbench.adapters.json.yeptris_schema_adapter import (
+        YeptrisSchemaAdapter,
+    )
+
+    base = _fixtures_or_skip()
+    medium_xml = (base / "medium.xml").read_text()
+    medium_json = (base / "medium.json").read_text()
+
+    xsd = LeptrisXsdAdapter()
+    if xsd.available:
+        assert xsd.validate(medium_xml) is True
+    sch = LeptrisSchematronAdapter()
+    if sch.available:
+        assert sch.validate(medium_xml) is True
+    schema = YeptrisSchemaAdapter()
+    if schema.available:
+        assert schema.validate(medium_json) is True
+
+
+
