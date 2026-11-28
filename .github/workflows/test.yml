@@ -26,4 +26,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: pip install -e '.[adapters,tris,dev]'
+      # the face tests exercise the real surfaces against the canonical
+      # fixtures (same layout the benchmark legs use)
+      - name: Load canonical fixtures
+        run: git clone --depth 1 https://github.com/serialbench/fixtures.git fixtures
+        shell: bash
       - run: pytest tests/ -q

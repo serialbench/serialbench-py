@@ -1,6 +1,8 @@
 import pathlib
 import tempfile
 
+import pytest
+
 from serialbench.adapters import xml, json, yaml, toml
 from serialbench.runner import run_format
 from serialbench.test_data import load
@@ -72,15 +74,22 @@ def test_runner_produces_rows(tmp_path):
     assert result["memory"], "memory rows missing"
 
 
+def _fixtures_or_skip():
+    from serialbench.test_data import fixtures_dir
+
+    try:
+        return fixtures_dir()
+    except FileNotFoundError:
+        pytest.skip("canonical fixtures not present")
+
+
 def test_leptris_xml_query_faces():
     from serialbench.adapters.xml.leptris_adapter import LeptrisAdapter
-    from serialbench.test_data import fixtures_dir
 
     adapter = LeptrisAdapter()
     if not adapter.available:
         return  # leptris not installed; availability is covered elsewhere
-
-    base = fixtures_dir()
+    base = _fixtures_or_skip()
     medium = (base / "medium.xml").read_text()
     large = (base / "large.xml").read_text()
 
@@ -108,9 +117,8 @@ def test_validation_faces_on_canonical_shapes():
     from serialbench.adapters.json.yeptris_schema_adapter import (
         YeptrisSchemaAdapter,
     )
-    from serialbench.test_data import fixtures_dir
 
-    base = fixtures_dir()
+    base = _fixtures_or_skip()
     medium_xml = (base / "medium.xml").read_text()
     medium_json = (base / "medium.json").read_text()
 
@@ -123,5 +131,6 @@ def test_validation_faces_on_canonical_shapes():
     schema = YeptrisSchemaAdapter()
     if schema.available:
         assert schema.validate(medium_json) is True
+
 
 
