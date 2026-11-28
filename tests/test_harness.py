@@ -99,3 +99,29 @@ def test_leptris_xml_query_faces():
     rset = rset[0] if isinstance(rset, list) else rset
     assert rset and len(rset.get("children", {}).get("record", [])) == 10_000
 
+
+def test_validation_faces_on_canonical_shapes():
+    from serialbench.adapters.xml.leptris_xsd_adapter import LeptrisXsdAdapter
+    from serialbench.adapters.xml.leptris_schematron_adapter import (
+        LeptrisSchematronAdapter,
+    )
+    from serialbench.adapters.json.yeptris_schema_adapter import (
+        YeptrisSchemaAdapter,
+    )
+    from serialbench.test_data import fixtures_dir
+
+    base = fixtures_dir()
+    medium_xml = (base / "medium.xml").read_text()
+    medium_json = (base / "medium.json").read_text()
+
+    xsd = LeptrisXsdAdapter()
+    if xsd.available:
+        assert xsd.validate(medium_xml) is True
+    sch = LeptrisSchematronAdapter()
+    if sch.available:
+        assert sch.validate(medium_xml) is True
+    schema = YeptrisSchemaAdapter()
+    if schema.available:
+        assert schema.validate(medium_json) is True
+
+

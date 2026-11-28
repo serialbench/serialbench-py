@@ -73,6 +73,8 @@ def run_format(fmt, test_data, sizes=("small", "medium", "large")) -> dict:
         for size in sizes:
             data = test_data[size][fmt]
             for adapter in _selected_adapters(operation, fmt):
+                if operation == "memory" and not adapter.supports("parse"):
+                    continue  # memory prices parse allocations only
                 try:
                     if operation == "memory":
                         row = _memory_row(adapter, fmt, size, data)
