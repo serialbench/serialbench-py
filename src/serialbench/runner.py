@@ -36,8 +36,11 @@ OPERATIONS = {
     "streaming": lambda a, data: a.stream_parse(data, lambda event, payload: None),
     # schema/query faces: the adapter resolves its per-shape schema or
     # plan from the document root and compiles it once per stem; the
-    # teptris/yeptris faces parse internally, so raw data is passed.
+    # teptris/yeptris/leptris faces parse internally, so raw data is
+    # passed (diff parses both sides inside the adapter too).
     "validation": lambda a, data: a.validate(data, None),
+    "c14n": lambda a, data: a.c14n(data),
+    "diff": lambda a, data: a.diff_walk(data),
     "plan": lambda a, data: a.plan_walk(data),
 }
 
@@ -59,7 +62,7 @@ def _selected_adapters(operation, fmt):
             continue
         if operation == "streaming" and not (adapter.supports("streaming") or adapter.supports("sax")):
             continue
-        if operation in ("validation", "plan") and not adapter.supports(operation):
+        if operation in ("validation", "c14n", "diff", "plan") and not adapter.supports(operation):
             continue
         yield adapter
 
